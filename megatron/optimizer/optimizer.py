@@ -4,8 +4,6 @@
 
 from abc import ABC
 from abc import abstractmethod
-from apex.multi_tensor_apply import multi_tensor_applier
-import amp_C
 import torch
 from torch.nn.parallel.distributed import DistributedDataParallel as torchDDP
 from torch._utils import _flatten_dense_tensors, _unflatten_dense_tensors
@@ -44,10 +42,8 @@ def _multi_tensor_copy_this_to_that(this, that, overflow_buf=None):
     if overflow_buf:
         overflow_buf.fill_(0)
         # Scaling with factor `1.0` is equivalent to copy.
-        multi_tensor_applier(amp_C.multi_tensor_scale,
-                             overflow_buf,
-                             [this, that],
-                             1.0)
+        for this_, that_ in zip(this, that):
+            that_.copy_(this_)
     else:
         for this_, that_ in zip(this, that):
             that_.copy_(this_)

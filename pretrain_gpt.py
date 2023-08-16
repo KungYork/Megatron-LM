@@ -90,11 +90,14 @@ def forward_step(data_iterator, model):
 def train_valid_test_datasets_provider(train_val_test_num_samples):
     """Build train, valid, and test datasets."""
     args = get_args()
+    args.train_data_path = "/home/gpt2_dataset/lambada_train_text_document"
+    args.test_data_path = "/home/gpt2_dataset/lambada_test_text_document"
+    args.valid_data_path = None
 
     print_rank_0('> building train, validation, and test datasets '
                  'for GPT ...')
     train_ds, valid_ds, test_ds = build_train_valid_test_datasets(
-        data_prefix=args.data_path,
+        data_prefix=None,
         data_impl=args.data_impl,
         splits_string=args.split,
         train_valid_test_num_samples=train_val_test_num_samples,

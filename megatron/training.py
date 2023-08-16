@@ -40,6 +40,7 @@ from megatron.utils import calc_params_l2_norm
 from megatron.schedules import get_forward_backward_func
 from megatron.utils import report_memory
 from megatron.model.vision.knn_monitor import compute_feature_bank
+from tasks.zeroshot_gpt.evaluate import evaluate_and_print_results as evaluate_and_print_results_finetune
 
 
 def print_datetime(string):
@@ -146,7 +147,7 @@ def pretrain(train_valid_test_dataset_provider,
     if args.do_train and args.train_iters > 0:
         iteration = train(forward_step_func,
                           model, optimizer, opt_param_scheduler,
-                          train_data_iterator, valid_data_iterator,
+                          train_data_iterator, test_data_iterator,
                           process_non_loss_data_func)
     print_datetime('after training is done')
 
@@ -709,14 +710,12 @@ def train(forward_step_func, model, optimizer, opt_param_scheduler,
             check_adlr_autoresume_termination(iteration, model, optimizer,
                                               opt_param_scheduler)
 
+        
         # Evaluation
-        if args.eval_interval and iteration % args.eval_interval == 0 and \
-           args.do_valid:
-            prefix = 'iteration {}'.format(iteration)
-            evaluate_and_print_results(prefix, forward_step_func,
-                                       valid_data_iterator, model,
-                                       iteration, process_non_loss_data_func,
-                                       False)
+        if args.eval_interval and iteration % args.eval_interval == 0:
+            evaluate_and_print_results_finetune("LAMBADA", model[0], "accuracy")
+        for model_module in model:
+            model_module.train()
 
         # Checkpointing
         saved_checkpoint = False

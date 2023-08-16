@@ -12,10 +12,8 @@ from megatron import get_tokenizer
 from megatron.core import parallel_state, tensor_parallel
 from megatron.checkpointing import load_checkpoint
 from megatron.model import GPTModel
-from megatron.training import get_model
 from megatron.utils import get_ltor_masks_and_position_ids, unwrap_model
 from megatron.p2p_communication import recv_forward, send_forward
-from tasks.finetune_utils import build_data_loader
 
 from .datasets import build_dataset
 
@@ -123,7 +121,7 @@ def evaluate(data_loader, model, eval_metric):
     with torch.no_grad():
         # For all the batches in the dataset.
         for iteration, batch in enumerate(data_loader):
-            if iteration % args.log_interval == 0:
+            if iteration % 30 == 0:
                 print_rank_0('> working on iteration: {}'.format(iteration))
             # Forward evaluation.
             output = forward_step(batch, model, eval_metric)
@@ -137,12 +135,18 @@ def evaluate(data_loader, model, eval_metric):
 
     return total_output
 
+from tasks.finetune_utils import build_data_loader
 
-def evaluate_and_print_results(task, data_loader, model, eval_metric):
+
+def evaluate_and_print_results(task, model, eval_metric):
     """Evaluate and print results on screen."""
-
+    args = get_args()
+    args.valid_data = ["/home/gpt2_dataset/lamabada_test.json"]
+    args.strict_lambada = False
+    lambada_dataset = build_dataset('LAMBADA')
+    lambada_dataset_loader = build_data_loader(lambada_dataset, 4, 2, drop_last=False)
     # Evaluate and get results.
-    output = evaluate(data_loader, model, eval_metric)
+    output = evaluate(lambada_dataset_loader, model, eval_metric)
 
     string = ' validation results on {} | '.format(task)
     if is_last_rank():
@@ -159,7 +163,7 @@ def evaluate_and_print_results(task, data_loader, model, eval_metric):
             string += 'token ratio: {} |'.format(token_ratio)
 
         elif eval_metric == 'accuracy':
-            num_examples = len(data_loader.dataset)
+            num_examples = len(lambada_dataset_loader.dataset)
             acc = output / num_examples
             string += 'number correct: {:.4E} | '.format(output)
             string += 'total examples: {:.4E} | '.format(num_examples)
@@ -176,35 +180,4 @@ def evaluate_and_print_results(task, data_loader, model, eval_metric):
 
 
 def main():
-    """Main program."""
-    args = get_args()
-
-    if args.num_layers_per_virtual_pipeline_stage is not None:
-        print("Interleaved pipeline schedule is not yet supported for text generation.")
-        exit()
-
-    if args.task == 'LAMBADA':
-        eval_metric = 'accuracy'
-    elif args.task == 'WIKITEXT103':
-        eval_metric = 'loss'
-    else:
-        raise NotImplementedError('{} task is not implemented.'.format(
-            args.task))
-
-    # Set up model and load checkpoint.
-    model = get_model(get_model_provider(eval_metric), wrap_with_ddp=False)
-    if args.load is not None:
-        _ = load_checkpoint(model, None, None)
-
-    assert len(model) == 1, "Above condition should have caught this"
-    model = model[0]
-
-    # Data stuff.
-    dataset = build_dataset(args.task)
-    dataloader = build_data_loader(dataset, args.micro_batch_size,
-                                   args.num_workers, drop_last=False)
-
-    # Run evaluation.
-    evaluate_and_print_results(args.task, dataloader, model, eval_metric)
-
-    print_rank_0('done :-)')
+    pass

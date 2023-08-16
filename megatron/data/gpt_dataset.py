@@ -73,17 +73,17 @@ def build_train_valid_test_datasets(data_prefix, data_impl,
         train_dataset, valid_dataset, test_dataset = None, None, None
         # Single dataset.
         if train_data_prefix is not None:
-            train_dataset = build_dataset("train", train_data_prefix, data_impl,
+            train_dataset = build_dataset("train", [train_data_prefix], data_impl,
                                         train_valid_test_num_samples[0], seq_length, seed,
                                         skip_warmup)
 
         if valid_data_prefix is not None:
-            valid_dataset = build_dataset("valid", valid_data_prefix, data_impl,
+            valid_dataset = build_dataset("valid", [valid_data_prefix], data_impl,
                                     train_valid_test_num_samples[1], seq_length, seed,
                                     False)
 
         if test_data_prefix is not None:
-            test_dataset = build_dataset("test", test_data_prefix, data_impl,
+            test_dataset = build_dataset("test", [test_data_prefix], data_impl,
                                     train_valid_test_num_samples[2], seq_length, seed,
                                     False)
 

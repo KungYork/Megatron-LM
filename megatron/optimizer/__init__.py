@@ -1,7 +1,7 @@
 # Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
 
-from apex.optimizers import FusedAdam as Adam
-from apex.optimizers import FusedSGD as SGD
+from torch.optim import SGD
+from torch.optim import AdamW as Adam
 
 from megatron import get_args
 
